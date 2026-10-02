@@ -30,11 +30,6 @@ class MockTransportTests(unittest.TestCase):
         self.assertEqual(r["status"], m.STATUS_ALLOWED)
         self.assertEqual(r["reason"], m.REASON_ALLOWED_PACKAGE)
 
-    def test_denied_package_exception(self):
-        r = self._result("pkg:npm/blocked-pkg@1.0.0")
-        self.assertEqual(r["status"], m.STATUS_DENIED)
-        self.assertEqual(r["reason"], m.REASON_DENIED_PACKAGE)
-
     def test_disjunction_allowed(self):
         r = self._result("pkg:npm/dual-licensed-pkg@1.0.0")
         self.assertEqual(r["status"], m.STATUS_ALLOWED)

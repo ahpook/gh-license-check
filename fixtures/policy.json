@@ -1,9 +1,6 @@
 {
   "name": "fixture-mit-only",
-  "description": "Permissive demo policy: MIT is the only allowed license. Package exceptions override the license check to demonstrate allowed_package / denied_package reasons.",
+  "description": "Permissive demo policy: MIT is the only allowed license. Package exemptions allow a specific package regardless of its license, demonstrating the allowed_package reason. There is no package deny-list: the feature only supports allow-lists (for licenses) and allow-exemptions (for packages).",
   "allowed_licenses": ["MIT"],
-  "package_exceptions": {
-    "allow": ["pkg:pypi/exemption"],
-    "deny": ["pkg:npm/blocked-pkg"]
-  }
+  "allowed_packages": ["pkg:pypi/exemption"]
 }

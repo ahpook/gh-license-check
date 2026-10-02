@@ -46,7 +46,12 @@ class MockTransport(Transport):
 
     Fixtures (see fixtures/):
       package_licenses.json : {"<purl>": "<spdx-license>"}  (exact PURL match)
-      policy.json           : allowed licenses + package-level exceptions
+      policy.json           : allowed licenses + package exemptions
+
+    The feature is allow-list only: `allowed_licenses` lists permitted
+    licenses and `allowed_packages` lists package-level exemptions (allow a
+    specific package regardless of license). There is no package deny-list, so
+    the mock never produces a `denied_package` result.
     """
 
     def __init__(self, fixtures_dir: Path):
@@ -58,9 +63,7 @@ class MockTransport(Transport):
         self.allowed_licenses = {
             lic.strip() for lic in policy.get("allowed_licenses", [])
         }
-        exceptions = policy.get("package_exceptions", {})
-        self.allow_packages = set(exceptions.get("allow", []))
-        self.deny_packages = set(exceptions.get("deny", []))
+        self.allowed_packages = set(policy.get("allowed_packages", []))
 
     def check(self, repo: str, purls: List[str]) -> dict:
         results: Dict[str, dict] = {}
@@ -81,12 +84,9 @@ class MockTransport(Transport):
         if license_expr is None:
             return m.PackageResult(m.STATUS_UNKNOWN, None, None)
 
-        # Package-level exceptions take precedence over license evaluation.
-        if key in self.deny_packages:
-            return m.PackageResult(
-                m.STATUS_DENIED, license_expr, m.REASON_DENIED_PACKAGE
-            )
-        if key in self.allow_packages:
+        # Package-level exemptions take precedence: allow a specific package
+        # regardless of its license. There is no package deny-list.
+        if key in self.allowed_packages:
             return m.PackageResult(
                 m.STATUS_ALLOWED, license_expr, m.REASON_ALLOWED_PACKAGE
             )

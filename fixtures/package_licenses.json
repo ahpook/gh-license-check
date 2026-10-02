@@ -4,6 +4,5 @@
   "pkg:pypi/requests@2.31.0": "Apache-2.0",
   "pkg:pypi/exemption@2.31.0": "GPL-3.0-only",
   "pkg:npm/dual-licensed-pkg@1.0.0": "MIT OR Apache-2.0",
-  "pkg:npm/compound-pkg@2.0.0": "MIT AND Apache-2.0",
-  "pkg:npm/blocked-pkg@1.0.0": "MIT"
+  "pkg:npm/compound-pkg@2.0.0": "MIT AND Apache-2.0"
 }

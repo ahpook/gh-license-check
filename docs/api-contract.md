@@ -49,7 +49,11 @@ without a breaking change.
 | `purls` | object | Keyed by the submitted PURL. |
 | `.status` | `allowed`, `denied`, `unknown` | `unknown` = no license data or the PURL could not be parsed/evaluated. |
 | `.license` | SPDX expression or `null` | The license evaluated against policy; `null` when `unknown`. |
-| `.reason` | `allowed_license`, `allowed_package`, `denied_license`, `denied_package`, or `null` | Package-level exception vs. license-level decision; `null` when `unknown`. |
+| `.reason` | `allowed_license`, `allowed_package`, `denied_license`, `denied_package`, or `null` | Package-level exemption vs. license-level decision; `null` when `unknown`. |
+
+> **`denied_package` caveat:** the reason enum includes `denied_package`, but
+> license policy today is allow-list only — there is no package deny-list — so
+> the server does not currently produce it. The mock does not emit it either.
 
 ## Notes for consumers
 

@@ -18,6 +18,9 @@ STATUS_UNKNOWN = "unknown"
 REASON_ALLOWED_LICENSE = "allowed_license"
 REASON_ALLOWED_PACKAGE = "allowed_package"
 REASON_DENIED_LICENSE = "denied_license"
+# Defined by the API's reason enum, but the feature has no package deny-list
+# today, so the server does not currently produce this and the mock never
+# emits it. Kept for complete response parsing if that changes.
 REASON_DENIED_PACKAGE = "denied_package"
 
 

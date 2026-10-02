@@ -15,7 +15,7 @@ pull request.
 ## Install
 
 ```sh
-gh extension install eric/gh-license-check    # once published
+gh extension install ahpook/gh-license-check    # once published
 # or, for local development from a clone:
 gh extension install .
 ```

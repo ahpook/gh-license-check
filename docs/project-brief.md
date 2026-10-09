@@ -40,9 +40,9 @@ The motivating consumer is an AI coding agent:
    and run them through the same check path. (The real API defers SBOM support
    to async future work; this tool can extract PURLs client-side and reuse the
    synchronous package-checks endpoint.)
-3. **Later — agent skill.** Package the tool as a skill an agent can call inside
+3. **Agent skill (done).** Package the tool as a skill an agent can call inside
    its coding loop, so it does not recommend or add packages that would violate
-   the organization's license policy.
+   the organization's license policy. See `skills/gh-license-check/SKILL.md`.
 
 ## Scope guardrails
 

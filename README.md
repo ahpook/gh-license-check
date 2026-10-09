@@ -79,6 +79,22 @@ gh license-check  ->  license_check.cli  ->  Transport
                                               └─ GhApiTransport (`gh api`, --live)
 ```
 
+## Agent skill
+
+[`skills/gh-license-check/SKILL.md`](skills/gh-license-check/SKILL.md) teaches a coding agent (Copilot CLI and other tools that read `SKILL.md`) to run this check before it adds, installs, or recommends a dependency, and how to act on each result.
+
+Install the extension first, then make the skill visible to your agent. For all your projects, link it into your personal skills directory:
+
+```sh
+gh extension install ahpook/gh-license-check
+mkdir -p ~/.copilot/skills
+ln -s ~/.local/share/gh/extensions/gh-license-check/skills/gh-license-check ~/.copilot/skills/gh-license-check
+```
+
+(`gh` installs extensions under `${XDG_DATA_HOME:-~/.local/share}/gh/extensions/`. Linking means `gh extension upgrade` also updates the skill.)
+
+For a single repository, copy the folder into that repo as `.github/skills/gh-license-check/`. In Copilot CLI, run `/skills reload` and confirm it appears in `/skills list`.
+
 ## Development
 
 ```sh
@@ -88,8 +104,8 @@ python3 -m license_check pkg:npm/lodash@4.17.21   # run without gh
 
 ## Roadmap
 
-1. Single/few PURLs against policy (now).
-2. SPDX SBOM input: extract PURLs and check them.
-3. Package as an agent skill for in-loop license gating.
+1. Single/few PURLs against policy (done).
+2. Agent skill for in-loop license gating (done, see above).
+3. SBOM input (SPDX and CycloneDX) using lib4sbom: extract PURLs and check them.
 
 See [docs/project-brief.md](docs/project-brief.md) for the full brief.

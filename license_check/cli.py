@@ -94,6 +94,11 @@ def main(argv: List[str] | None = None) -> int:
             print(f"error: {exc}", file=sys.stderr)
             return 2
         repo = args.repo or "OWNER/REPO"
+        print(
+            f"note: using mock policy fixtures from {args.fixtures}; results do "
+            "not reflect a real repository policy (use --live once the API ships)",
+            file=sys.stderr,
+        )
 
     try:
         response = transport.check(repo, args.purls)

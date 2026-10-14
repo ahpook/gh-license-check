@@ -1,6 +1,6 @@
 """Data types mirroring the API contract.
 
-Status and reason values are the exact strings used by the public REST API
+Status and reason values are the exact strings returned by the REST API
 (see docs/api-contract.md), so JSON round-trips without translation.
 """
 
@@ -14,14 +14,25 @@ STATUS_ALLOWED = "allowed"
 STATUS_DENIED = "denied"
 STATUS_UNKNOWN = "unknown"
 
-# Reason values. `null` (None) accompanies an unknown status.
+# Reason values.
 REASON_ALLOWED_LICENSE = "allowed_license"
 REASON_ALLOWED_PACKAGE = "allowed_package"
 REASON_DENIED_LICENSE = "denied_license"
-# Defined by the API's reason enum, but the feature has no package deny-list
-# today, so the server does not currently produce this and the mock never
-# emits it. Kept for complete response parsing if that changes.
+# The API returns the string "unknown" (not null) alongside an unknown status.
+REASON_UNKNOWN = "unknown"
+# Defined by the API's reason enum, but the feature has no package deny-list,
+# so the server does not produce this and the mock never emits it. Kept so
+# response parsing stays complete if that changes.
 REASON_DENIED_PACKAGE = "denied_package"
+
+STATUSES = {STATUS_ALLOWED, STATUS_DENIED, STATUS_UNKNOWN}
+REASONS = {
+    REASON_ALLOWED_LICENSE,
+    REASON_ALLOWED_PACKAGE,
+    REASON_DENIED_LICENSE,
+    REASON_DENIED_PACKAGE,
+    REASON_UNKNOWN,
+}
 
 
 @dataclass(frozen=True)

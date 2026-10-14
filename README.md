@@ -1,83 +1,82 @@
 # gh-license-check
 
-A [GitHub CLI](https://cli.github.com) extension that validates a package's
-license against a repository's license policy, via the Dependency Graph
-["validate packages against license policy" API](docs/api-contract.md).
+A [GitHub CLI](https://cli.github.com) extension that checks packages against a
+repository's license policy, using the Dependency Graph
+[package-checks API](docs/api-contract.md).
 
-Built for AI coding agents and developers who want a quick pre-flight check —
-"before I add this dependency, is its license allowed here?" — without opening a
+It's built for AI coding agents and developers who want a quick pre-flight check
+("before I add this dependency, is its license allowed here?") without opening a
 pull request.
-
-> **Status:** early scaffold. The upstream API is specced but **not deployed
-> yet**, so by default this evaluates against local fixtures through an
-> in-process mock. See [docs/project-brief.md](docs/project-brief.md).
 
 ## Install
 
 ```sh
-gh extension install ahpook/gh-license-check    # once published
-# or, for local development from a clone:
-gh extension install .
+gh extension install ahpook/gh-license-check
 ```
 
-Requires `python3` on your `PATH`. No Python dependencies (standard library
-only).
+Requires `python3` on your `PATH`. There are no Python dependencies (standard
+library only).
 
 ## Usage
 
-Check a single package:
+Run it inside a clone of the repository whose policy you want to check against,
+or name the repository with `--repo`:
 
 ```sh
-gh license-check pkg:npm/lodash@4.17.21
+gh license-check --repo OWNER/REPO \
+  pkg:npm/postgres@3.4.9-kumiko.1 \
+  pkg:npm/@cosmicdrift/kumiko-types@0.351.0
 ```
 
 ```
-✓ ALLOWED pkg:npm/lodash@4.17.21
-            license: MIT   reason: allowed_license
+✓ ALLOWED pkg:npm/postgres@3.4.9-kumiko.1
+            license: Unlicense   reason: allowed_package
+✗ DENIED  pkg:npm/@cosmicdrift/kumiko-types@0.351.0
+            license: BUSL-1.1   reason: denied_license
 ```
 
-Check several at once, and get machine-readable output:
+Add `--json` for the raw API response, which is what an agent or script should
+parse.
 
-```sh
-gh license-check --json \
-  pkg:npm/lodash@4.17.21 \
-  pkg:pypi/requests@2.31.0 \
-  pkg:npm/some-unpublished-pkg@1.0.0
-```
+Each PURL needs an exact version. A PURL without a version (or a string that
+isn't a PURL) comes back `unknown`.
 
 ### Options
 
 | Flag | Description |
 | ---- | ----------- |
-| `--repo OWNER/REPO` | Target repository (informational for the mock; required for `--live`). |
+| `-R`, `--repo OWNER/REPO` | Repository whose policy applies. Defaults to the repository in the current directory. |
 | `--json` | Emit the raw API response body. |
 | `--fail-on LIST` | Statuses that cause a non-zero exit. Default `denied,unknown`. Use `denied` to ignore unknowns. |
-| `--fixtures DIR` | Use a different mock fixtures directory. |
-| `--live` | Call the real endpoint via `gh api` instead of the mock (not deployed yet). |
-| `--hostname HOST` | GitHub hostname for `--live` (e.g. GHES). |
+| `--hostname HOST` | GitHub host to call (for example a GHES or ghe.com host). |
+| `--mock` | Evaluate against local fixtures instead of calling the API (offline use and testing). |
+| `--fixtures DIR` | Fixtures directory for `--mock`. |
 
 ### Exit codes
 
-- `0` — no package hit the `--fail-on` set.
-- `1` — at least one package did (e.g. denied, or unknown by default).
-- `2` — usage or transport error.
+- `0`: no package hit the `--fail-on` set.
+- `1`: at least one package did (denied, or unknown by default).
+- `2`: usage or API error, such as a 404 when the repository has no license
+  policy you can read.
 
-`unknown` is treated as a failure by default: a package with no license data
-can't be shown to satisfy policy, so an agent should not proceed on it.
+`unknown` is treated as a failure by default, since a package that couldn't be
+evaluated hasn't been shown to satisfy policy.
 
 ## How it works
 
-The real API resolves each PURL in two stages — package → license (Dependency
-Graph), then license → policy decision (osslicensecompliance). The mock mirrors
-that with two fixtures (package licenses, policy). See
-[fixtures/README.md](fixtures/README.md) and
-[docs/api-contract.md](docs/api-contract.md).
+The API resolves each PURL in two stages: package to license (Dependency Graph
+data), then license to a policy decision. A package with no license data is
+denied with a `null` license. See [docs/api-contract.md](docs/api-contract.md)
+for the observed contract, including where it differs from the original spec.
 
 ```
 gh license-check  ->  license_check.cli  ->  Transport
-                                              ├─ MockTransport  (fixtures, default)
-                                              └─ GhApiTransport (`gh api`, --live)
+                                              ├─ GhApiTransport (`gh api`, default)
+                                              └─ MockTransport  (fixtures, --mock)
 ```
+
+The mock mirrors the same two stages with two fixture files. See
+[fixtures/README.md](fixtures/README.md).
 
 ## Agent skill
 
@@ -98,9 +97,25 @@ For a single repository, copy the folder into that repo as `.github/skills/gh-li
 ## Development
 
 ```sh
-python3 -m unittest discover -s tests      # run tests
-python3 -m license_check pkg:npm/lodash@4.17.21   # run without gh
+python3 -m unittest discover -s tests                 # offline tests
+python3 -m license_check --mock pkg:npm/lodash@4.17.21  # run without gh or network
 ```
+
+The offline suite covers PURL parsing, the mock, the `gh api` transport (with a
+fake `gh`), and the CLI against a response recorded from the live API.
+
+Tests against the live API are opt-in, because results depend on a
+repository's policy and on your access to it. Point them at a repository whose
+policy you can read:
+
+```sh
+GH_LICENSE_CHECK_LIVE_REPO=OWNER/REPO python3 -m unittest tests.test_live -v
+```
+
+By default these only assert behavior that holds under any policy. To also pin
+verdicts for your repository, set `GH_LICENSE_CHECK_LIVE_EXPECT` to a JSON map
+of PURL to status, for example
+`'{"pkg:npm/lodash@4.17.21": "allowed"}'`. See `tests/test_live.py`.
 
 ## Roadmap
 

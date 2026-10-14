@@ -1,6 +1,6 @@
 """Command-line interface for gh-license-check.
 
-Usage (minimal bar):
+Usage:
     gh license-check pkg:npm/lodash@4.17.21
 
 Checks one or more PURLs against a repository's license policy and prints a
@@ -18,7 +18,7 @@ from typing import List
 
 from . import __version__
 from . import models as m
-from .transports import GhApiTransport, MockTransport
+from .transports import GhApiTransport, MockTransport, current_repo
 
 # Default fixtures ship alongside the package (repo-root/fixtures).
 _DEFAULT_FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
@@ -37,27 +37,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("purls", nargs="*", help="One or more Package URLs (PURLs).")
     p.add_argument(
+        "-R",
         "--repo",
         default=None,
-        help="Target repository as OWNER/REPO. Informational for the mock; "
-        "required for --base-url/live calls.",
+        help="Repository whose policy to check against, as OWNER/REPO "
+        "(default: the repository in the current directory).",
+    )
+    p.add_argument(
+        "--hostname",
+        default=None,
+        help="GitHub hostname to call (e.g. a GHES or ghe.com host).",
+    )
+    p.add_argument(
+        "--mock",
+        action="store_true",
+        help="Evaluate against local fixtures instead of calling the API "
+        "(offline use and testing).",
     )
     p.add_argument(
         "--fixtures",
         type=Path,
         default=_DEFAULT_FIXTURES,
-        help="Directory of mock fixtures (default: bundled fixtures/).",
-    )
-    p.add_argument(
-        "--live",
-        action="store_true",
-        help="Call the real endpoint via `gh api` instead of the local mock "
-        "(the endpoint is not deployed yet).",
-    )
-    p.add_argument(
-        "--hostname",
-        default=None,
-        help="GitHub hostname for --live (e.g. a GHES host).",
+        help="Fixtures directory for --mock (default: bundled fixtures/).",
     )
     p.add_argument(
         "--fail-on",
@@ -71,6 +72,9 @@ def build_parser() -> argparse.ArgumentParser:
         dest="as_json",
         help="Emit the raw API response body as JSON.",
     )
+    # Accepted for compatibility with earlier versions, where the API call
+    # was opt-in. It is now the default.
+    p.add_argument("--live", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return p
 
@@ -84,25 +88,20 @@ def main(argv: List[str] | None = None) -> int:
 
     fail_on = {s.strip() for s in args.fail_on.split(",") if s.strip()}
 
-    if args.live:
-        transport = GhApiTransport(hostname=args.hostname)
-        repo = args.repo or ""
-    else:
-        try:
-            transport = MockTransport(args.fixtures)
-        except FileNotFoundError as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            return 2
-        repo = args.repo or "OWNER/REPO"
-        print(
-            f"note: using mock policy fixtures from {args.fixtures}; results do "
-            "not reflect a real repository policy (use --live once the API ships)",
-            file=sys.stderr,
-        )
-
     try:
+        if args.mock:
+            transport = MockTransport(args.fixtures)
+            repo = args.repo or "OWNER/REPO"
+            print(
+                f"note: --mock evaluates against fixtures in {args.fixtures}, "
+                "not a real repository policy",
+                file=sys.stderr,
+            )
+        else:
+            transport = GhApiTransport(hostname=args.hostname)
+            repo = args.repo or current_repo()
         response = transport.check(repo, args.purls)
-    except Exception as exc:  # surface transport failures cleanly
+    except Exception as exc:  # surface setup and transport failures cleanly
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
@@ -114,7 +113,8 @@ def main(argv: List[str] | None = None) -> int:
         _print_table(args.purls, results)
 
     failed = any(
-        results.get(purl, {}).get("status") in fail_on for purl in args.purls
+        results.get(purl, {}).get("status", m.STATUS_UNKNOWN) in fail_on
+        for purl in args.purls
     )
     return 1 if failed else 0
 

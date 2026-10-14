@@ -35,14 +35,14 @@ class SkillTests(unittest.TestCase):
 
 
 class CliOutputTests(unittest.TestCase):
-    def test_json_stdout_is_clean_and_mock_notice_on_stderr(self):
+    def test_mock_json_stdout_is_clean_and_notice_on_stderr(self):
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = main(["--json", "pkg:npm/lodash@4.17.21"])
+            code = main(["--mock", "--json", "pkg:npm/lodash@4.17.21"])
         self.assertEqual(code, 0)
         body = json.loads(out.getvalue())
         self.assertEqual(body["purls"]["pkg:npm/lodash@4.17.21"]["status"], "allowed")
-        self.assertIn("mock policy fixtures", err.getvalue())
+        self.assertIn("--mock", err.getvalue())
 
 
 if __name__ == "__main__":

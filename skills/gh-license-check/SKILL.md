@@ -20,7 +20,7 @@ You do not need to re-check packages that are already present in the manifest at
 ## Prerequisites
 
 1. Confirm the extension is available: `gh license-check --version`. If it is missing, ask the user before installing it with `gh extension install ahpook/gh-license-check`.
-2. Determine the target repository: `gh repo view --json nameWithOwner -q .nameWithOwner`.
+2. The policy comes from a repository. By default the CLI uses the repository in the current directory. If you are working outside a clone, or the user names a different repository, pass `--repo OWNER/REPO`.
 
 ## Build PURLs
 
@@ -28,7 +28,7 @@ The CLI takes Package URLs. Always include an exact version, since the policy se
 
 | Ecosystem | PURL form | Example |
 | --- | --- | --- |
-| npm | `pkg:npm/<name>@<ver>` (scoped: `pkg:npm/%40scope/<name>@<ver>`) | `pkg:npm/lodash@4.17.21` |
+| npm | `pkg:npm/<name>@<ver>` (scoped: `pkg:npm/@scope/<name>@<ver>`; `%40scope` also works) | `pkg:npm/lodash@4.17.21` |
 | PyPI | `pkg:pypi/<name>@<ver>` (lowercase, `_` becomes `-`) | `pkg:pypi/requests@2.31.0` |
 | Go | `pkg:golang/<module path>@<ver>` | `pkg:golang/github.com/spf13/cobra@v1.8.0` |
 | Cargo | `pkg:cargo/<name>@<ver>` | `pkg:cargo/serde@1.0.200` |
@@ -41,10 +41,10 @@ The CLI takes Package URLs. Always include an exact version, since the policy se
 Batch every candidate package into a single call and request JSON:
 
 ```sh
-gh license-check --json --repo OWNER/REPO pkg:npm/lodash@4.17.21 pkg:pypi/requests@2.31.0
+gh license-check --json pkg:npm/lodash@4.17.21 pkg:npm/@cosmicdrift/kumiko-types@0.351.0
 ```
 
-Exit codes: `0` means every package is allowed, `1` means at least one package is denied or unknown, and `2` means a usage or transport error (report it to the user and do not treat it as approval).
+Exit codes: `0` means every package is allowed, `1` means at least one package is denied or unknown, and `2` means a usage or API error. An error is never approval. Report it to the user; the message on stderr explains the cause. A 404 means the repository has no license policy the user can read (personal repositories have none), so the check can't be done there.
 
 The response is keyed by the PURL you submitted:
 
@@ -52,25 +52,22 @@ The response is keyed by the PURL you submitted:
 {
   "purls": {
     "pkg:npm/lodash@4.17.21": { "status": "allowed", "license": "MIT", "reason": "allowed_license" },
-    "pkg:pypi/requests@2.31.0": { "status": "denied", "license": "Apache-2.0", "reason": "denied_license" }
+    "pkg:npm/@cosmicdrift/kumiko-types@0.351.0": { "status": "denied", "license": "BUSL-1.1", "reason": "denied_license" }
   }
 }
 ```
 
 ## Act on the result
 
-| status | reason | What to do |
-| --- | --- | --- |
-| `allowed` | `allowed_license` | Proceed. |
-| `allowed` | `allowed_package` | Proceed. The package is exempted by policy even though its license would not otherwise be allowed; mention this to the user. |
-| `denied` | `denied_license` | Do not add, install, or recommend the package. Tell the user which license was found and that the policy does not allow it. Offer alternatives, and check those alternatives with this skill before suggesting them. |
-| `unknown` | `null` | Do not proceed silently. There is no license data for that version (or the PURL could not be parsed). Recheck the PURL; if it is correct, tell the user and ask how they want to proceed. |
+| status | license | reason | What to do |
+| --- | --- | --- | --- |
+| `allowed` | any | `allowed_license` | Proceed. |
+| `allowed` | any | `allowed_package` | Proceed. The package is exempted by policy even though its license may not otherwise be allowed; mention this to the user. |
+| `denied` | an SPDX expression | `denied_license` | Do not add, install, or recommend the package. Tell the user which license was found and that the policy does not allow it. Offer alternatives, and check those alternatives with this skill before suggesting them. |
+| `denied` | `null` | `denied_license` | Do not proceed. There is no license data for that package version, and policy only allows known licenses. Double-check the name and version (a typo produces this result); if they are correct, tell the user the license is unknown and ask how they want to proceed. |
+| `unknown` | `null` | `unknown` | The PURL could not be evaluated, usually because the version is missing or the string is not a valid PURL. Fix the PURL and check again. |
 
 Never work around a denial (for example by vendoring the code, copying source from the package, or choosing a different version without checking it). If the user explicitly decides to proceed anyway, follow their decision and note that the package needs a policy exemption.
-
-## Current limitation: mock data
-
-The upstream API (`POST /repos/:owner/:repo/license-compliance/package-checks`) is not deployed yet. Until it is, the CLI evaluates against bundled fixture data, prints a notice on stderr, and ignores `--repo`. Results in this mode do not reflect the organization's real policy, so tell the user when your decision relied on mock results. Once the endpoint is live, add `--live` to call it through `gh api` with the user's credentials.
 
 ## Scope
 

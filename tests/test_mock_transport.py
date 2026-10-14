@@ -38,15 +38,26 @@ class MockTransportTests(unittest.TestCase):
         r = self._result("pkg:npm/compound-pkg@2.0.0")
         self.assertEqual(r["status"], m.STATUS_DENIED)
 
-    def test_unknown_when_no_license_data(self):
+    def test_denied_with_null_license_when_no_license_data(self):
         r = self._result("pkg:npm/does-not-exist@9.9.9")
-        self.assertEqual(r["status"], m.STATUS_UNKNOWN)
+        self.assertEqual(r["status"], m.STATUS_DENIED)
         self.assertIsNone(r["license"])
-        self.assertIsNone(r["reason"])
+        self.assertEqual(r["reason"], m.REASON_DENIED_LICENSE)
 
     def test_unknown_when_malformed_purl(self):
         r = self._result("not-a-purl")
         self.assertEqual(r["status"], m.STATUS_UNKNOWN)
+        self.assertIsNone(r["license"])
+        self.assertEqual(r["reason"], m.REASON_UNKNOWN)
+
+    def test_unknown_when_version_missing(self):
+        r = self._result("pkg:npm/lodash")
+        self.assertEqual(r["status"], m.STATUS_UNKNOWN)
+
+    def test_type_is_case_insensitive(self):
+        r = self._result("pkg:NPM/lodash@4.17.21")
+        self.assertEqual(r["status"], m.STATUS_ALLOWED)
+        self.assertEqual(r["license"], "MIT")
 
 
 if __name__ == "__main__":

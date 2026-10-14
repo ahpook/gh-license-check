@@ -70,7 +70,7 @@ class GhApiTransportErrorTests(unittest.TestCase):
     def test_404_explains_access(self):
         err = self._raise(_error(404, "Not Found"))
         self.assertEqual(err.status, 404)
-        self.assertIn("no license policy", str(err))
+        self.assertIn("license compliance is not enabled", str(err))
 
     def test_422_surfaces_server_message(self):
         err = self._raise(_error(422, "Invalid request.\n\nInvalid property /purls: 1 item required; only 0 were supplied."))

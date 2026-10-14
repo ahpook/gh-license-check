@@ -44,7 +44,7 @@ Batch every candidate package into a single call and request JSON:
 gh license-check --json pkg:npm/lodash@4.17.21 pkg:npm/@cosmicdrift/kumiko-types@0.351.0
 ```
 
-Exit codes: `0` means every package is allowed, `1` means at least one package is denied or unknown, and `2` means a usage or API error. An error is never approval. Report it to the user; the message on stderr explains the cause. A 404 means the repository has no license policy the user can read (personal repositories have none), so the check can't be done there.
+Exit codes: `0` means every package is allowed, `1` means at least one package is denied or unknown, and `2` means a usage or API error. An error is never approval. Report it to the user; the message on stderr explains the cause. A 404 means the repository doesn't exist, the user can't read its license policy, or license compliance isn't enabled for it (for example, a personal repository), so the check can't be done there.
 
 The response is keyed by the PURL you submitted:
 

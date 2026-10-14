@@ -56,8 +56,8 @@ isn't a PURL) comes back `unknown`.
 
 - `0`: no package hit the `--fail-on` set.
 - `1`: at least one package did (denied, or unknown by default).
-- `2`: usage or API error, such as a 404 when the repository has no license
-  policy you can read.
+- `2`: usage or API error, such as a 404 when license compliance isn't
+  enabled for the repository or you can't read its policy.
 
 `unknown` is treated as a failure by default, since a package that couldn't be
 evaluated hasn't been shown to satisfy policy.

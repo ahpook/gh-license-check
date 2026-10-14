@@ -74,7 +74,7 @@ A recorded response lives in [`tests/data/live_response.json`](../tests/data/liv
 
 | HTTP status | When |
 | ----------- | ---- |
-| 404 | The repository doesn't exist, the caller can't read its license policy, or license policy isn't available for it (a personal repository returned 404). |
+| 404 | The repository doesn't exist, the caller can't read its license policy, or license compliance isn't enabled for it. The endpoint is gated by billing enablement, so personal and non-enabled repositories return 404. |
 | 422 | Invalid body, for example an empty `purls` array. |
 | 503 | The check could not complete. A request with 1,001 PURLs returned 503 while 101 succeeded, so very large batches appear to time out. |
 

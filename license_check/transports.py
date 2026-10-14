@@ -49,7 +49,7 @@ _HINTS = {
     403: "access denied; your token may lack permission to read this "
     "repository's license policy",
     404: "the repository was not found, you cannot read its license policy, "
-    "or it has no license policy, as with personal repositories",
+    "or license compliance is not enabled for it",
     503: "the service could not complete the check; large batches can time "
     "out, so try fewer PURLs or retry later",
 }
